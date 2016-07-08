@@ -52,10 +52,10 @@ class Source(object):
         self.re = re if not re or type(re) is list else [re]
         # dyn: specify files by re + custom code snippets
         dynamic = data[DYNAMIC_KEY] if not simple_spec and DYNAMIC_KEY in data else None
-        assert not dynamic or type(re) is list
+        assert not dynamic or type(dynamic) is list
         # dynamic shall be either a dyn-item(re-str, import-str, eval-str) list, or a list of dyn-items
         assert not dynamic or 0 == len(dynamic) or \
-               (type(dynamic[0]) is list or (type(dynamic[0]) is str and len(dynamic) == 3))
+            (type(dynamic[0]) is list or (type(dynamic[0]) is str and len(dynamic) == 3))
         self.dynamic = dynamic if not dynamic or type(dynamic[0]) is list else [dynamic]
 
         assert self.file_or_dir or self.ext or self.re or self.dynamic
