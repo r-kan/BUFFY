@@ -22,6 +22,7 @@ ROOT_KEY = "root"
 FILE_KEY = "file"
 EXT_KEY = "ext"
 RE_KEY = "re"
+DYNAMIC_KEY = "dyn"
 
 DIR_DELIM = "/"
 
@@ -34,22 +35,30 @@ class Source(object):
             sys.exit()
         simple_spec = type(data) is str
 
-        file_or_dir = data if simple_spec else data[FILE_KEY] if FILE_KEY in data else None
-        assert not file_or_dir or type(file_or_dir) in [str, list]
-        self.file_or_dir = file_or_dir if not file_or_dir or type(file_or_dir) is list else [file_or_dir]
-
         self.root = data[ROOT_KEY] if not simple_spec and ROOT_KEY in data else ""
         assert type(self.root) is str
 
+        # file: specify files by give accurate filename/dirname
+        file_or_dir = data if simple_spec else data[FILE_KEY] if FILE_KEY in data else None
+        assert not file_or_dir or type(file_or_dir) in [str, list]
+        self.file_or_dir = file_or_dir if not file_or_dir or type(file_or_dir) is list else [file_or_dir]
+        # ext: specify files by extension name
         ext = data[EXT_KEY] if not simple_spec and EXT_KEY in data else None
         assert not ext or type(ext) in [str, list]
         self.ext = ext if not ext or type(ext) is list else [ext]
-
+        # re: specify files by regular expression matching
         re = data[RE_KEY] if not simple_spec and RE_KEY in data else None
         assert not re or type(re) in [str, list]
         self.re = re if not re or type(re) is list else [re]
+        # dyn: specify files by re + custom code snippets
+        dynamic = data[DYNAMIC_KEY] if not simple_spec and DYNAMIC_KEY in data else None
+        assert not dynamic or type(re) is list
+        # dynamic shall be either a dyn-item(re-str, import-str, eval-str) list, or a list of dyn-items
+        assert not dynamic or 0 == len(dynamic) or \
+               (type(dynamic[0]) is list or (type(dynamic[0]) is str and len(dynamic) == 3))
+        self.dynamic = dynamic if not dynamic or type(dynamic[0]) is list else [dynamic]
 
-        assert self.file_or_dir or self.ext or self.re
+        assert self.file_or_dir or self.ext or self.re or self.dynamic
 
         self.show_setting()
         if len(self.root) > 0 and self.root[-1] != DIR_DELIM:
@@ -61,6 +70,7 @@ class Source(object):
         show_list(self.file_or_dir, "file")
         show_list(self.ext, "ext")
         show_list(self.re, "re")
+        show_list(self.dynamic, "dyn")
 
     @staticmethod
     def get_dir_files(dirname):
@@ -74,6 +84,18 @@ class Source(object):
     def get_files(file_or_dir):
         return Source.get_dir_files(file_or_dir) if os.path.isdir(file_or_dir) else [file_or_dir]
 
+    @staticmethod
+    def get_re_files(root, raw_patterns):
+        patterns = [re.compile(".*/" + item) for item in raw_patterns]
+        sources = []
+        for root, dirs, files in os.walk(root):
+            for src in (files + dirs):
+                file_or_dir = root + "/" + src
+                for pattern in patterns:
+                    if re.match(pattern, file_or_dir):
+                        sources += Source.get_files(file_or_dir)
+        return sources
+
     def get_sources(self):
         sources = []
         if self.file_or_dir:
@@ -83,8 +105,11 @@ class Source(object):
                     logging.warning("[config] the specified source '%s' does not exist" % src)
                     continue
                 sources += Source.get_files(src)
-        if self.ext:
+
+        if self.ext or self.re or self.dynamic:
             assert "" != self.root
+
+        if self.ext:
             for root, _, files in os.walk(self.root):
                 assert len(root) >= 1
                 if root[-1] != DIR_DELIM:
@@ -94,14 +119,21 @@ class Source(object):
                     if ext.replace(".", "") in self.ext:
                         sources.append(root + file)
         if self.re:
-            assert "" != self.root
-            patterns = [re.compile(".*/" + item) for item in self.re]
-            for root, dirs, files in os.walk(self.root):
-                for src in (files + dirs):
-                    file_or_dir = root + "/" + src
-                    for pattern in patterns:
-                        if re.match(pattern, file_or_dir):
-                            sources += Source.get_files(file_or_dir)
+            sources += Source.get_re_files(self.root, self.re)
+
+        if self.dynamic:
+            patterns = []
+            for dyn_item in self.dynamic:
+                [re_str, import_str, eval_str] = dyn_item
+                dynamic_alias = "$dyn$"
+                if dynamic_alias not in re_str:
+                    logging.warning("[config] '%s' does not appear in '%s', dynamic filename mechanism will not apply"
+                                    % (dynamic_alias, re_str))
+                exec("import %s" % import_str)
+                dyn_str = eval(eval_str)
+                patterns.append(re_str.replace(dynamic_alias, dyn_str))
+            sources += Source.get_re_files(self.root, patterns)
+
         return list(set(sources))  # 'set' to remove duplication
 
 
