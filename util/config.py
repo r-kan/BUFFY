@@ -86,10 +86,13 @@ class Source(object):
         if self.ext:
             assert "" != self.root
             for root, _, files in os.walk(self.root):
+                assert len(root) >= 1
+                if root[-1] != DIR_DELIM:
+                    root += DIR_DELIM
                 for file in files:
                     basename, ext = os.path.splitext(file)
                     if ext.replace(".", "") in self.ext:
-                        sources.append(root + "/" + file)
+                        sources.append(root + file)
         if self.re:
             assert "" != self.root
             patterns = [re.compile(".*/" + item) for item in self.re]

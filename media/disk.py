@@ -36,14 +36,18 @@ class Disk(MediaBase):
     def backup_compress(self, sources):
         src_list = ""
         for src in sources:
-            src_list += src.replace(self.root, "") + " "
+            if "\"" in src:
+                logging.warning("[disk] filename with '\"' (double quote) is not supported, skip file '%s'" % src)
+                continue
+            src_list += src.replace(self.root, "").replace("'", "\\'").replace(" ", "\\ ") + " \n"
         out_basename = self.name if "" != self.name else "BUFFY"
         encoding_str = "_" + self.encoding_str if len(self.encoding_str) > 0 else ""
         dst_base = self._dst_root + "/" + out_basename + encoding_str
-        compress_cmd = "ls %(src_list)s | xargs tar zcvf %(dst)s" \
+        compress_cmd = "tar zcvf %(dst)s \n%(src_list)s" \
                        % {'src_list': src_list, 'dst': "%s.tar.gz" % dst_base}
         os.chdir(self.root)
-        os.system(compress_cmd + ">& /dev/null")
+        # TODO: handle 'double quote' (now only 'single quote' name is supported)
+        os.system("bash -c \"" + compress_cmd.replace("\n", "") + ">& /dev/null\"")
         Disk.write(dst_base + ".txt", compress_cmd + "\n")
 
     def backup_uncompress(self, sources):
