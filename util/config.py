@@ -51,9 +51,9 @@ class Source(object):
         assert not ext or type(ext) in [str, list]
         self.ext = ext if not ext or type(ext) is list else [ext]
         # re: specify files by regular expression matching
-        re = data[RE_KEY] if not simple_spec and RE_KEY in data else None
-        assert not re or type(re) in [str, list]
-        self.re = re if not re or type(re) is list else [re]
+        re_data = data[RE_KEY] if not simple_spec and RE_KEY in data else None
+        assert not re_data or type(re_data) in [str, list]
+        self.re = re_data if not re_data or type(re_data) is list else [re_data]
         # dyn: specify files by re + custom code snippets
         dynamic = data[DYNAMIC_KEY] if not simple_spec and DYNAMIC_KEY in data else None
         assert not dynamic or type(dynamic) is list
@@ -84,7 +84,10 @@ class Source(object):
         assert os.path.isdir(dirname)
         ret = []
         for root, _, files in os.walk(dirname):
-            ret += [root + "/" + file for file in files]
+            assert len(root) >= 1
+            if root[-1] != DIR_DELIM:
+                root += DIR_DELIM
+            ret += [root + file for file in files]
         return ret
 
     @staticmethod
@@ -93,11 +96,14 @@ class Source(object):
 
     @staticmethod
     def get_re_files(root, raw_patterns):
-        patterns = [re.compile(".*/" + item) for item in raw_patterns]
+        patterns = [re.compile(root + item) for item in raw_patterns]
         sources = []
         for root, dirs, files in os.walk(root):
+            assert len(root) >= 1
+            if root[-1] != DIR_DELIM:
+                root += DIR_DELIM
             for src in (files + dirs):
-                file_or_dir = root + "/" + src
+                file_or_dir = root + src
                 for pattern in patterns:
                     if re.match(pattern, file_or_dir):
                         sources += Source.get_files(file_or_dir)
@@ -142,7 +148,7 @@ class Source(object):
             sources += Source.get_re_files(self.root, patterns)
 
         exclude_sources = self.exclude.get_sources() if self.exclude else []
-        return [src for src in list(set(sources)) if src not in exclude_sources]  # 'set' to remove duplication
+        return sorted([src for src in list(set(sources)) if src not in exclude_sources])  # 'set' to remove duplication
 
 
 NAME_KEY = "name"
@@ -153,7 +159,6 @@ ENCODING_KEY = "encoding"
 
 
 DEFAULT_COMPRESS = False
-DEFAULT_PRESERVE_HIER = True
 DEFAULT_ENCODING = False
 
 
