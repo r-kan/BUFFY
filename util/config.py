@@ -23,20 +23,24 @@ FILE_KEY = "file"
 EXT_KEY = "ext"
 RE_KEY = "re"
 DYNAMIC_KEY = "dyn"
+EXCLUDE_KEY = "exclude"
 
 DIR_DELIM = "/"
 
 
 class Source(object):
-    def __init__(self, data):
+    def __init__(self, data, root="", is_exclude=False):
+        self.is_exclude = is_exclude
         if not type(data) in [str, dict]:
             logging.error("[config] entry 'src' shall contain 'str' or 'dict' value instead of %s, program exit..." %
                           type(data))
             sys.exit()
         simple_spec = type(data) is str
 
-        self.root = data[ROOT_KEY] if not simple_spec and ROOT_KEY in data else ""
+        self.root = data[ROOT_KEY] if not simple_spec and ROOT_KEY in data else root
         assert type(self.root) is str
+        if "" is not self.root and not self.is_exclude:
+            logging.debug("root: %s" % self.root)
 
         # file: specify files by give accurate filename/dirname
         file_or_dir = data if simple_spec else data[FILE_KEY] if FILE_KEY in data else None
@@ -60,17 +64,20 @@ class Source(object):
 
         assert self.file_or_dir or self.ext or self.re or self.dynamic
 
-        self.show_setting()
+        # exclude: sources that need not backup (kept by a child 'Source' instance)
+        assert not self.is_exclude or EXCLUDE_KEY not in data  # nested 'exclude' entry is not supported
+        self.exclude = Source(data[EXCLUDE_KEY], self.root, True) if EXCLUDE_KEY in data else None
+
+        self.show_sources()
         if len(self.root) > 0 and self.root[-1] != DIR_DELIM:
             self.root += DIR_DELIM
 
-    def show_setting(self):
-        if "" is not self.root:
-            logging.debug("root: %s" % self.root)
-        show_list(self.file_or_dir, "file")
-        show_list(self.ext, "ext")
-        show_list(self.re, "re")
-        show_list(self.dynamic, "dyn")
+    def show_sources(self):
+        prefix = "exclude " if self.is_exclude else ""
+        show_list(self.file_or_dir, prefix + "file")
+        show_list(self.ext, prefix + "ext")
+        show_list(self.re, prefix + "re")
+        show_list(self.dynamic, prefix + "dyn")
 
     @staticmethod
     def get_dir_files(dirname):
@@ -134,7 +141,8 @@ class Source(object):
                 patterns.append(re_str.replace(dynamic_alias, dyn_str))
             sources += Source.get_re_files(self.root, patterns)
 
-        return list(set(sources))  # 'set' to remove duplication
+        exclude_sources = self.exclude.get_sources() if self.exclude else []
+        return [src for src in list(set(sources)) if src not in exclude_sources]  # 'set' to remove duplication
 
 
 NAME_KEY = "name"
