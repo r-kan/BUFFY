@@ -28,6 +28,9 @@ class BUFFY(object):
     def run(self):
         logging.info("[BUFFY] start back up...")
         sources = self.config.src.get_sources()
+        if not len(sources) > 0:
+            logging.info("[BUFFY] no sources to back up")
+            return
         for dst in self.config.dst:
             media = create_media(dst, self.config)
             if not media.exist():

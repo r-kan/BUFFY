@@ -37,21 +37,18 @@ class Disk(MediaBase):
             fd.write(content)
 
     def backup_compress(self, sources):
-        src_list = ""
-        for src in sources:
-            if "\"" in src:
-                logging.warning("[disk] filename with '\"' (double quote) is not supported, skip file '%s'" % src)
-                continue
-            src_list += src.replace(self.root, "").replace("'", "\\'").replace(" ", "\\ ") + " \n"
         out_basename = self.name if "" != self.name else "BUFFY"
         encoding_str = "_" + self.encoding_str if len(self.encoding_str) > 0 else ""
         dst_base = self._dst_root + out_basename + encoding_str
-        compress_cmd = "tar zcvf %(dst)s \n%(src_list)s" \
-                       % {'src_list': src_list, 'dst': "%s.tar.gz" % dst_base}
+        tar_input_file = dst_base + ".list"
+        with open(tar_input_file, 'w') as fd:
+            for src in sources:
+                fd.write(src.replace(self.root, "") + "\n")
+        compress_cmd = "tar zcvf %(dst)s -T %(src_list_file)s" \
+                       % {'dst': "%s.tar.gz" % dst_base, 'src_list_file': tar_input_file}
         os.chdir(self.root)
-        # TODO: handle 'double quote' (now only 'single quote' name is supported)
-        os.system("bash -c \"" + compress_cmd.replace("\n", "") + ">& /dev/null\"")
-        return dst_base + ".txt", compress_cmd
+        os.system("bash -c \"" + compress_cmd + " >& /dev/null\"")
+        return dst_base + ".txt", ("cd %s\n" % self.root) + compress_cmd
 
     def backup_uncompress(self, sources):
         backup_map = collections.OrderedDict()
@@ -77,4 +74,9 @@ class Disk(MediaBase):
         logging.info("[disk] back up to dst: %s" % self._dst_root)
         backup_ftor = self.backup_compress if self.compress else self.backup_uncompress
         report_file, report_str = backup_ftor(sources)
-        Disk.write(report_file, report_str)  # TODO: report_str may be too large... need some way to constrain it
+        report_str_max_length = 1024 * 1024  # 1MB
+        if len(report_str) > report_str_max_length:
+            message = "skip dump subsequent report str for the total size (%s) is too large" % len(report_str)
+            logging.info("[info] %s" % message)
+            report_str = report_str[:report_str_max_length] + "\n...\n" + message
+        Disk.write(report_file, report_str)
