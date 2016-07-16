@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import collections
-import logging
 import os
-import errno
+from logging import info
 from shutil import copyfile
 from media.base import MediaBase
 from util.config import DIR_DELIM
@@ -14,13 +13,14 @@ def mkdir_p(path):
     try:
         os.makedirs(path)
     except OSError as exc:
+        import errno
         if exc.errno != errno.EEXIST or not os.path.isdir(path):
             raise
 
 
 class Disk(MediaBase):
-    def __init__(self, dst_root, setting):
-        super(Disk, self).__init__(dst_root, setting)
+    def __init__(self, dst_root, setting, dry):
+        super(Disk, self).__init__(dst_root, setting, dry)
         if self._dst_root[-1] != DIR_DELIM:
             self._dst_root += DIR_DELIM
 
@@ -28,11 +28,14 @@ class Disk(MediaBase):
         return os.path.exists(self._dst_root)
 
     def create_path(self):
-        logging.info("[disk] create path: %s" % self._dst_root)
-        os.mkdir(self._dst_root)
+        info("[disk] create path: %s" % self._dst_root)
+        if not self.dry:
+            os.mkdir(self._dst_root)
 
     @staticmethod
-    def write(filename, content):
+    def write(filename, content, dry_run):
+        if dry_run:
+            return
         with open(filename, 'w') as fd:
             fd.write(content)
 
@@ -41,13 +44,15 @@ class Disk(MediaBase):
         encoding_str = "_" + self.encoding_str if len(self.encoding_str) > 0 else ""
         dst_base = self._dst_root + out_basename + encoding_str
         tar_input_file = dst_base + ".list"
-        with open(tar_input_file, 'w') as fd:
-            for src in sources:
-                fd.write(src.replace(self.root, "") + "\n")
+        src_list_content = ""
+        for src in sources:
+            src_list_content += (src.replace(self.root, "") + "\n")
+        Disk.write(tar_input_file, src_list_content, self.dry)
         compress_cmd = "tar zcvf %(dst)s -T %(src_list_file)s" \
                        % {'dst': "%s.tar.gz" % dst_base, 'src_list_file': tar_input_file}
         os.chdir(self.root)
-        os.system("bash -c \"" + compress_cmd + " >& /dev/null\"")
+        if not self.dry:
+            os.system("bash -c \"" + compress_cmd + " >& /dev/null\"")
         return dst_base + ".txt", ("cd %s\n" % self.root) + compress_cmd
 
     def backup_uncompress(self, sources):
@@ -58,12 +63,13 @@ class Disk(MediaBase):
         for src in sources:
             dirname, _ = os.path.split(src)
             need_dir = dst_base + (dirname + DIR_DELIM).replace(self.root, '')
-            if not os.path.exists(need_dir):
+            if not os.path.exists(need_dir) and not self.dry:
                 mkdir_p(need_dir)
             dst = need_dir + os.path.basename(src)
             backup_map[src] = dst
             assert not os.path.isdir(src)
-            copyfile(src, dst)
+            if not self.dry:
+                copyfile(src, dst)
         report_str = ""
         for src_to_dst in backup_map:
             report_str += (src_to_dst + " => " + backup_map[src_to_dst] + "\n")
@@ -71,12 +77,12 @@ class Disk(MediaBase):
         return report_file, report_str
 
     def back_up(self, sources):
-        logging.info("[disk] back up to dst: %s" % self._dst_root)
+        info("[disk] back up to dst: %s" % self._dst_root)
         backup_ftor = self.backup_compress if self.compress else self.backup_uncompress
         report_file, report_str = backup_ftor(sources)
         report_str_max_length = 1024 * 1024  # 1MB
         if len(report_str) > report_str_max_length:
-            message = "skip dump subsequent report str for the total size (%s) is too large" % len(report_str)
-            logging.info("[info] %s" % message)
+            message = "skip dump subsequent report for the total size (%s) is too large" % len(report_str)
+            info("[info] %s" % message)
             report_str = report_str[:report_str_max_length] + "\n...\n" + message
-        Disk.write(report_file, report_str)
+        Disk.write(report_file, report_str, self.dry)

@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import logging
+from logging import info
 
 
 class MediaBase(object):
-    def __init__(self, dst_root, setting):
+    def __init__(self, dst_root, setting, args):
         self._dst_root = dst_root
         self.root = setting.src.root
         self.name = setting.name
         self.compress = setting.compress
         self.encoding_str = MediaBase.get_encoding(setting.encoding)
+        self.dry = args.dry
 
     def exist(self):
         return False
@@ -22,10 +23,10 @@ class MediaBase(object):
         assert False
 
     def create_path(self):
-        logging.info("[media] not support create path: %s" % self._dst_root)
+        info("[media] not support create path: %s" % self._dst_root)
 
     def back_up(self, sources):
-        logging.info("[media] not support back up: %s" % self._dst_root)
+        info("[media] not support back up: %s" % self._dst_root)
 
     @staticmethod
     def get_encoding(enable):
