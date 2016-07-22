@@ -4,7 +4,7 @@
 import sys
 import logging
 from argparse import ArgumentParser
-from logging import info, INFO, DEBUG, ERROR
+from logging import info, INFO, DEBUG, WARNING
 from media_entry import create_media
 
 
@@ -13,7 +13,7 @@ class BUFFY(object):
         args = ArgumentParser(description='BUFFY --- Back Up Files For You')
         args.add_argument("-c", "--config", dest="config_file", default=None, help="config file name")
         args.add_argument("-v", "--verbose", dest="verbose", action="store_const", const=DEBUG, help="verbose mode")
-        args.add_argument("-s", "--silent", dest="silent", action="store_const", const=ERROR, help="silent mode")
+        args.add_argument("-s", "--silent", dest="silent", action="store_const", const=WARNING, help="silent mode")
         args.add_argument("-d", "--dry_run", dest="dry", action="store_const", const=True, help="perform a dry run")
         self.args = args.parse_args()
         if not self.args.config_file:
@@ -25,6 +25,8 @@ class BUFFY(object):
         self.config = Config(self.args.config_file)
 
     def run(self):
+        if self.args.dry:
+            info("[BUFFY] perform a dry run")
         info("[BUFFY] start back up...")
         sources = self.config.src.get_sources()
         if not len(sources) > 0:
