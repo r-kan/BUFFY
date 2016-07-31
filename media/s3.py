@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-from logging import info, warning, error
+from logging import info
 from subprocess import Popen, PIPE, STDOUT
-from media.base import MediaBase, TMP_DIR
+from media.base import MediaBase
+from util.global_def import warning, error
 
 """
   following information is from 'aws s3 help'
@@ -19,6 +20,10 @@ from media.base import MediaBase, TMP_DIR
 
 S3_HEAD = "s3://"
 S3_DELIM = "/"
+
+
+def pp_popen_out(out_str):
+    return str(out_str).replace("b'", '').replace("\\n'", '')
 
 
 def locate_abs_exec(program):  # 'program' can be an absolute path name, or just a basename
@@ -37,7 +42,7 @@ def locate_abs_exec(program):  # 'program' can be an absolute path name, or just
     # try 'type' (note: mac os may need this)
     type_cmd = Popen(["type", program], stdout=PIPE, stderr=STDOUT)
     stdout_data, _ = type_cmd.communicate()
-    out = str(stdout_data).replace("b'%s is " % program, '').replace("\\n'", '')
+    out = pp_popen_out(stdout_data).replace("%s is " % program, '')
     if is_exe(out):
         return out
     return None
@@ -59,6 +64,7 @@ class S3(MediaBase):
             self.okay = False
             return
         self.aws = aws_path
+        self.cp_cmd = self.aws + " s3 cp "  # use for logging
         wo_head_path = self._dst_root[len(S3_HEAD):]
         end_bucket = wo_head_path.find(S3_DELIM)
         bucket = wo_head_path if -1 == end_bucket else wo_head_path[:end_bucket]
@@ -67,26 +73,36 @@ class S3(MediaBase):
         res = os.system("bash -c \"" + check_bucket_cmd + " >& /dev/null\"")
         self.okay = 0 == res
         if not self.okay:
-            warning("[s3] fail to locate bucket '%s' (err: %s)", bucket, res)
+            warning("[s3] fail to locate bucket '%s' (err: %s)" % (bucket, res))
 
     def create_path(self):
         pass
 
-    def copyfile(self, src, dst):
-        if not self.dry:
-            # TODO: name like aa"'"bb can cause aws s3 cp fail... need detect it...
-            cp_cmd = Popen([self.aws, "s3", "cp", src, dst], stdout=PIPE, stderr=STDOUT)
-            stdout_data, _ = cp_cmd.communicate()
-        return cp_cmd
+    def get_file_info_not_dry(self, filename):
+        if self.dry:
+            return -1, "NA"
+        cmd_list = [self.aws, "s3", "ls", filename]
+        stdout_data, _ = Popen(cmd_list, stdout=PIPE, stderr=STDOUT).communicate()
+        ls_out_list = pp_popen_out(stdout_data).split()
+        if not 4 == len(ls_out_list):
+            warning("[s3] ls %s gives unexpected result" % filename)
+            return -1, "NA"
+        [day, time, size, _] = ls_out_list
+        return int(size), day + " " + time
 
-    def backup_compress(self, sources):
-        return MediaBase.backup_compress(self, sources)
+    def copyfile(self, src, dst):
+        cmd_list = [self.aws, "s3", "cp", src, dst]
+        if not self.dry:
+            stdout_data, _ = Popen(cmd_list, stdout=PIPE, stderr=STDOUT).communicate()
+        size, _ = self.get_file_info_not_dry(dst)  # do not use the value 'timestamp'
+        valid = -1 != size
+        return valid, size if valid else 0
 
     def backup_uncompress(self, sources):
-        return MediaBase.backup_uncompress(self, sources, S3_DELIM, TMP_DIR)
+        return MediaBase.backup_uncompress(self, sources, S3_DELIM)
 
     def back_up(self, sources):
         if not self.okay:
             warning("[s3] skip to back up to destination '%s'" % self._dst_root)
             return
-        MediaBase.back_up(self, sources)
+        return MediaBase.back_up(self, sources)

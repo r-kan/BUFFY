@@ -2,20 +2,22 @@
 # -*- coding: utf-8 -*-
 
 import re
-import logging
 import os
 import sys
+from logging import debug, info
+from media.s3 import S3_HEAD
+from util.global_def import DIR_DELIM, warning, error
 
 
 def show_list(list_entry, name):
     if not list_entry:
         return
     if 1 == len(list_entry):
-        logging.debug("%s: %s" % (name, list_entry[0]))
+        debug("%s: %s" % (name, list_entry[0]))
     else:
-        logging.debug("%s:" % name)
+        debug("%s:" % name)
         for item in list_entry:
-            logging.debug("\t%s" % item)
+            debug("\t%s" % item)
 
 
 ROOT_KEY = "root"
@@ -25,22 +27,20 @@ RE_KEY = "re"
 DYNAMIC_KEY = "dyn"
 EXCLUDE_KEY = "exclude"
 
-DIR_DELIM = "/"
-
 
 class Source(object):
     def __init__(self, data, root="", is_exclude=False):
         self.is_exclude = is_exclude
         if not type(data) in [str, dict]:
-            logging.error("[config] entry 'src' shall contain 'str' or 'dict' value instead of %s, program exit..." %
-                          type(data))
+            error("[config] entry 'src' shall contain 'str' or 'dict' value instead of %s, program exit..."
+                  % type(data))
             sys.exit()
         simple_spec = type(data) is str
 
         self.root = data[ROOT_KEY] if not simple_spec and ROOT_KEY in data else root
         assert type(self.root) is str
         if "" is not self.root and not self.is_exclude:
-            logging.debug("root: %s" % self.root)
+            debug("root: %s" % self.root)
 
         # file: specify files by give accurate filename/dirname
         file_or_dir = data if simple_spec else data[FILE_KEY] if FILE_KEY in data else None
@@ -64,13 +64,13 @@ class Source(object):
 
         assert self.file_or_dir or self.ext or self.re or self.dynamic
 
-        # exclude: sources that need not backup (kept by a child 'Source' instance)
-        assert not self.is_exclude or EXCLUDE_KEY not in data  # nested 'exclude' entry is not supported
-        self.exclude = Source(data[EXCLUDE_KEY], self.root, True) if EXCLUDE_KEY in data else None
-
         self.show_sources()
         if len(self.root) > 0 and self.root[-1] != DIR_DELIM:
             self.root += DIR_DELIM
+
+        # exclude: sources that need not backup (kept by a child 'Source' instance)
+        assert not self.is_exclude or EXCLUDE_KEY not in data  # nested 'exclude' entry is not supported
+        self.exclude = Source(data[EXCLUDE_KEY], self.root, True) if EXCLUDE_KEY in data else None
 
     def show_sources(self):
         prefix = "exclude " if self.is_exclude else ""
@@ -115,7 +115,7 @@ class Source(object):
             for file_or_dir in self.file_or_dir:
                 src = self.root + file_or_dir
                 if not os.path.exists(src):
-                    logging.warning("[config] the specified source '%s' does not exist" % src)
+                    warning("[config] the specified source '%s' does not exist" % src)
                     continue
                 sources += Source.get_files(src)
 
@@ -140,8 +140,8 @@ class Source(object):
                 [re_str, import_str, eval_str] = dyn_item
                 dynamic_alias = "$dyn$"
                 if dynamic_alias not in re_str:
-                    logging.warning("[config] '%s' does not appear in '%s', dynamic filename mechanism will not apply"
-                                    % (dynamic_alias, re_str))
+                    warning("[config] '%s' does not appear in '%s', dynamic filename mechanism will not apply"
+                            % (dynamic_alias, re_str))
                 exec("import %s" % import_str)
                 dyn_str = eval(eval_str)
                 patterns.append(re_str.replace(dynamic_alias, dyn_str))
@@ -151,9 +151,44 @@ class Source(object):
         return sorted([src for src in list(set(sources)) if src not in exclude_sources])  # 'set' to remove duplication
 
 
+def get_bool_value(data, key, default_value):
+    return True if key in data and data[key] in ["yes", "y"] else default_value
+
+
+PATH_KEY = "path"
+DETAIL_KEY = "detail"
+
+DEFAULT_DETAIL = False
+
+
+class Report(object):
+    def __init__(self, data):
+        self.path = None
+        self.detail = DEFAULT_DETAIL
+        if not data:
+            return
+        if not type(data) in [str, dict]:
+            error("[config] entry 'rpt' shall contain 'str' or 'dict' value instead of %s" % type(data))
+            return
+        path = data[PATH_KEY] if type(data) is not str and PATH_KEY in data else data
+        if "" == path:
+            return
+        assert type(path) is str and "" != path
+        if 0 == path.find(S3_HEAD):
+            info("[config] report to aws s3 (%s) is not supported" % path)
+            return
+        if path[-1] != DIR_DELIM:
+            path += DIR_DELIM
+        self.path = path
+        self.detail = get_bool_value(data, DETAIL_KEY, self.detail)
+        debug("report path: %s" % self.path)
+        debug("report detail: %s" % ("yes" if self.detail else "no"))
+
+
 NAME_KEY = "name"
-DST_KEY = "dst"
-SRC_KEY = "src"
+DST_KEY = "dst"  # destination
+SRC_KEY = "src"  # source
+RPT_KEY = "rpt"  # report
 COMPRESS_KEY = "compress"
 ENCODING_KEY = "encoding"
 
@@ -164,43 +199,40 @@ DEFAULT_ENCODING = False
 
 class Config(object):
 
-    @staticmethod
-    def get_bool_value(data, key, default_value):
-        return True if key in data and data[key] in ["yes", "y"] else default_value
-
     def __init__(self, config_file):
         if not config_file or not os.path.exists(config_file):
-            logging.error("[BUFFY] config file \"%s\" does not exist, program exit..." % config_file)
+            error("[BUFFY] config file \"%s\" does not exist, program exit..." % config_file)
             sys.exit()
-        logging.info("[BUFFY] reading config file \"%s\"..." % config_file)
+        info("[BUFFY] reading config file \"%s\"..." % config_file)
         with open(config_file) as config_fp:
             import json
             data = json.load(config_fp)
 
         if DST_KEY not in data:
-            logging.error("[config] no \'dst\' specified, program exit...")
+            error("[config] no \'dst\' specified, program exit...")
             sys.exit()
         dst = data[DST_KEY]
         if not type(dst) in [str, list]:
-            logging.error("[config] entry 'src' shall contain 'str' or 'list' value instead of %s, program exit..." %
-                          type(dst))
+            error("[config] entry 'src' shall contain 'str' or 'list' value instead of %s, program exit..."
+                  % type(dst))
             sys.exit()
 
         if SRC_KEY not in data:
-            logging.error("[config] no \'src\' specified, program exit...")
+            error("[config] no \'src\' specified, program exit...")
             sys.exit()
 
         self.dst = [dst] if type(dst) is str else dst
         self.name = data[NAME_KEY] if NAME_KEY in data else ""
         assert type(self.name) is str
-        self.compress = Config.get_bool_value(data, COMPRESS_KEY, DEFAULT_COMPRESS)
-        self.encoding = Config.get_bool_value(data, ENCODING_KEY, DEFAULT_ENCODING)
+        self.compress = get_bool_value(data, COMPRESS_KEY, DEFAULT_COMPRESS)
+        self.encoding = get_bool_value(data, ENCODING_KEY, DEFAULT_ENCODING)
 
-        logging.debug("------------------------")
+        debug("------------------------")
         if "" != self.name:
-            logging.debug("name: %s" % self.name)
+            debug("name: %s" % self.name)
         show_list(self.dst, "dst")
         self.src = Source(data[SRC_KEY])
-        logging.debug("compress: %s" % ("yes" if self.compress else "no"))
-        logging.debug("encoding: %s" % ("yes" if self.encoding else "no"))
-        logging.debug("------------------------")
+        debug("compress: %s" % ("yes" if self.compress else "no"))
+        debug("encoding: %s" % ("yes" if self.encoding else "no"))
+        self.rpt = Report(data[RPT_KEY] if RPT_KEY in data else None)
+        debug("------------------------")
