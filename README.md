@@ -24,7 +24,7 @@ For example, you can tell BUFFY to back up file
 * matches with certain regular expression  
 * matches with certain ‘dynamic’ pattern  
 
-Besides, form an ‘excluded’ file list is also possible  
+Besides, form an ‘excluded’ file list for backup is also possible  
 
 # Future direction of BUFFY
 Support more remote backup media  
