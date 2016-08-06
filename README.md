@@ -17,7 +17,7 @@ It is suggested to back up both locally and remotely, e.g., local disk and <a hr
     buffy -src my_file_dir -dst /my_backup/ -dst s3://my_backup_bucket  
 ```
 
-It can be painful due to various aspects of expense, if we back up more than requirement.  
+It can be bad due to various aspects of expense, if we back up more than requirement.  
 BUFFY provides a set of simple yet flexible functions to specify the backup target.  
 For example, you can tell BUFFY to back up file    
 * with certain extension name  
