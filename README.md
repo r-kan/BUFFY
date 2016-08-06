@@ -31,7 +31,7 @@ This is accomplished by giving a json configuration file to BUFFY.
     buffy -c example.json  
 ```
 
-In example.json, we have 
+In <a href='https://github.com/r-kan/BUFFY/blob/master/example.json'>example.json</a>, we have 
 ```
     "src":
     {
