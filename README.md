@@ -12,7 +12,7 @@ First, let’s back up a single file **my_file.txt** to local disk **/my_backup/
     buffy -src my_file.txt -dst /my_backup/  
 ```
 
-It is suggested to back up both locally and remotely, e.g., local disk and <a href='http://aws.amazon.com/s3'>aws s3</a>  
+It is suggested to back up both locally and remotely, e.g., local disk and <a href='http://aws.amazon.com/s3'>Amazon S3</a>  
 ```
     buffy -src my_file_dir -dst /my_backup/ -dst s3://my_backup_bucket  
 ```
