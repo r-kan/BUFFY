@@ -2,7 +2,7 @@
 BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files  
 
 # How BUFFY makes your life better
-* Back up to local and remote space at one time  
+* Back up to local and remote spaces at one time  
 * Very simple and straightforward to use, yet flexible  
 * Easy monitoring backup status  
 
@@ -17,16 +17,16 @@ It is suggested to back up both locally and remotely, e.g., local disk and <a hr
     buffy -src my_file_dir -dst /my_backup/ -dst s3://my_backup_bucket  
 ```
 
-It could be bad due to various aspects of expense, if we back up more than requirement.  
+It could be bad due to various aspects of expense, if we back up beyond requirement.  
 BUFFY provides a set of simple yet flexible functions to specify the backup target.  
-For example, you can tell BUFFY to back up file    
+For example, you can tell BUFFY to back up file:    
 * with certain extension name  
 * matches with certain regular expression  
-* matches with certain ‘dynamic’ pattern  
+* matches with certain ‘dynamic pattern'  
 
-Besides, form an ‘excluded’ file list for backup is also possible  
+Besides, form an excluded file list for backup is also possible.  
 
-This is accomplished by constructing a json configuration file to BUFFY.  
+This is accomplished by giving a json configuration file to BUFFY.  
 ```
     buffy -c example.json  
 ```
