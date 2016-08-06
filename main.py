@@ -33,7 +33,7 @@ class BUFFY(object):
         self.args = args.parse_args()
         if not self.args.config_file and (not self.args.src or not self.args.dst):
             args.print_help()
-            BUFFY.print_example()
+            BUFFY.print_information()
             sys.exit()
         log_level = self.args.verbose if self.args.verbose else self.args.silent if self.args.silent else INFO
         logging.basicConfig(format='', level=log_level)
@@ -77,9 +77,11 @@ class BUFFY(object):
             disk_write(report_file, RPT_WARN_ERR + content + "\n")
 
     @staticmethod
-    def print_example():
+    def print_information():
         print("\nexample:")
         print("  buffy -src /data_dir -dst /backup_dir -dst s3://backup_bucket")
+        print("  buffy -c example.json")
+        print("\ncheck https://github.com/r-kan/BUFFY for updates and more information!")
 
     @staticmethod
     def get_source_digest(root, sources):
