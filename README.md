@@ -1,9 +1,5 @@
-# BUFFY
-_~Back Up Files For You~_
-
 # BUFFY? What is it?
-A pin tool to back up files  
-Created by python  
+BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files  
 
 # How BUFFY makes your life better
 * Back up to local and remote space at one time  
