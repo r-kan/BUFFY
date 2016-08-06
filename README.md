@@ -48,3 +48,6 @@ In example.json, we have
 
 # Future direction of BUFFY
 Support more remote backup media  
+
+# Contact  
+Please contact <a href='http://r-kan.github.io'>*rkan*</a> by its_right@msn.com for any question/request/bug without hesitation. 
