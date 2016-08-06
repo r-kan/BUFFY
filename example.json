@@ -1,0 +1,23 @@
+{
+    "name": "buffy_files",
+    "dst": ["/my_backup", "s3://my_backup_bucket"],
+    "src":
+    {
+        "root": "/my_file_dir",
+        "file": ["password.txt", "email/"],
+        "ext": ["jpg", "png"],
+        "re": [".*/credential.+"],
+        "exclude":
+        {
+            "re": ".*.DS_Store$"
+        }
+    },
+    "compress": "yes",
+    "encoding": "no",
+    "rpt":
+    {
+        "path": "/my_buffy_report",
+        "detail": "yes"
+    }
+}
+
