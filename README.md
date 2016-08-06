@@ -26,5 +26,25 @@ For example, you can tell BUFFY to back up file
 
 Besides, form an ‘excluded’ file list for backup is also possible  
 
+This is accomplished by constructing a json configuration file to BUFFY.  
+```
+    buffy -c example.json  
+```
+
+In example.json, we have 
+```
+    "src":
+    {
+        "root": "/my_file_dir",             <== the base directory of backup source
+        "file": ["password.txt", "email/"], <== file, or directory can be specified
+        "ext": ["jpg", "png"],              <== back up the pictures
+        "re": [".*/credential.+"],          <== back up file basename ends with 'credential'
+        "exclude":
+        {
+            "re": ".*.DS_Store$"            <== not back up the Mac OS system file '.DS_Store'
+        }
+    },
+```
+
 # Future direction of BUFFY
 Support more remote backup media  
