@@ -7,7 +7,7 @@ BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files
 * Easy monitoring backup status  
 
 # How to use BUFFY?
-First, let’s back up a single file to local disk  
+First, let’s back up a single file **my_file.txt** to local disk **/my_backup/**  
 ```
     buffy -src my_file.txt -dst /my_backup/  
 ```
