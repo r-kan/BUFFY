@@ -8,6 +8,7 @@ from util.global_def import DIR_DELIM
 
 
 TMP_DIR = "%(delim)stmp%(delim)sBUFFY%(delim)s" % {'delim': DIR_DELIM}  # TODO: support Windows
+DEFAULT_NAME = "BUFFY"
 
 
 def mkdir_p(path):
@@ -54,8 +55,8 @@ class MediaBase(object):
 
     def backup_compress(self, sources):
         is_disk = "disk" == self.media_name
-        backup_name = (self.name if "" != self.name else "BUFFY") + \
-                      ("_" + self.encoding_str if len(self.encoding_str) > 0 else "")
+        backup_name = self.encoding_str if not self.name else \
+            self.name + ("_" + self.encoding_str if len(self.encoding_str) > 0 else "")
         dst_base = self._dst_root + backup_name
         non_disk_dst_base = (self.report_path if self.report_path else TMP_DIR) + backup_name
         tar_input_file = non_disk_dst_base + ".list"
@@ -78,8 +79,9 @@ class MediaBase(object):
         reproduce_str = "cd %s\n%s\n" % (self.root, compress_cmd) + \
                         ("" if is_disk else "%s%s %s\n" % (self.cp_cmd, targz_file, "%s.tar.gz" % dst_base))
         size, timestamp = self.get_file_info_not_dry("%s.tar.gz" % dst_base)
+        reproduce_file = (DEFAULT_NAME if "" == backup_name else backup_name) + "_" + self.media_name + ".cmd"
         return "%s.tar.gz, size: %i, timestamp: %s" % (backup_name, size, timestamp), \
-               backup_name + "_" + self.media_name + ".cmd", reproduce_str
+               reproduce_file, reproduce_str
 
     def backup_uncompress(self, sources, delim):
         backup_map = collections.OrderedDict()
@@ -97,7 +99,7 @@ class MediaBase(object):
             backuped, size = self.copyfile(src, dst)
             backuped_count += backuped
             backuped_size += size
-        reproduce_file = ("BUFFY" if "" == backup_name else backup_name) + "_" + self.media_name + ".cmd"
+        reproduce_file = (DEFAULT_NAME if "" == backup_name else backup_name) + "_" + self.media_name + ".cmd"
         return "file count: %i, size: %i" % (backuped_count, backuped_size), \
                reproduce_file, self.get_reproduce_str(backup_map)
 

@@ -7,23 +7,47 @@ from argparse import ArgumentParser
 from logging import info, INFO, DEBUG, WARNING
 from media_entry import create_media
 from media.base import MediaBase, disk_write
+from util.config import Config, DEFAULT_COMPRESS, DEFAULT_ENCODING
 
 
 class BUFFY(object):
     def __init__(self):
         args = ArgumentParser(description='BUFFY --- Back Up Files For You')
-        args.add_argument("-c", "--config", dest="config_file", default=None, help="config file name")
+        # simple flow options
+        args.add_argument("-src", dest="src", default=None, help="backup source")
+        args.add_argument("-dst", dest="dst", action='append', default=None, help="backup destination")
+        args.add_argument("-n", "--name", dest="name", default=None, help="backup name")
+        args.add_argument("-e", "--encoding", dest="encoding", action="store_const", const=True,
+                          help="name encoding with date (default: %s)" % DEFAULT_ENCODING)
+        args.add_argument("-cmp", "--compress", dest="compress", action="store_const", const=True,
+                          help="compress backup files (default: %s)" % DEFAULT_COMPRESS)
+        args.add_argument("-r", "--report", dest="rpt", default=None, help="report path")
+        simple_flow_args = ["src", "dst", "name", "compress", "encoding", "rpt"]
+        # general options
         args.add_argument("-v", "--verbose", dest="verbose", action="store_const", const=DEBUG, help="verbose mode")
         args.add_argument("-s", "--silent", dest="silent", action="store_const", const=WARNING, help="silent mode")
         args.add_argument("-d", "--dry_run", dest="dry", action="store_const", const=True, help="perform a dry run")
+        # normal flow option
+        args.add_argument("-c", "--config", dest="config_file", default=None,
+                          help="config file (this option overwrites others)")
         self.args = args.parse_args()
-        if not self.args.config_file:
+        if not self.args.config_file and (not self.args.src or not self.args.dst):
             args.print_help()
+            BUFFY.print_example()
             sys.exit()
         log_level = self.args.verbose if self.args.verbose else self.args.silent if self.args.silent else INFO
         logging.basicConfig(format='', level=log_level)
-        from util.config import Config
-        self.config = Config(self.args.config_file)
+        if self.args.config_file:
+            for arg in vars(self.args):
+                value = getattr(self.args, arg)
+                if None is not value and arg in simple_flow_args:
+                    info("option value '%s = %s' has no effect" % (arg, value))
+            self.config = Config(self.args.config_file)
+        else:
+            compress = DEFAULT_COMPRESS if None is self.args.compress else self.args.compress
+            encoding = DEFAULT_ENCODING if None is self.args.encoding else self.args.encoding
+            self.config = Config(src=self.args.src, dst=self.args.dst, name=self.args.name,
+                                 compress=compress, encoding=encoding, rpt=self.args.rpt)
 
     def run(self):
         if self.args.dry:
@@ -51,6 +75,11 @@ class BUFFY(object):
             report_file = self.config.rpt.path + ("BUFFY" if "" == backup_name else backup_name) + ".log"
             from util.global_def import RPT_WARN_ERR
             disk_write(report_file, RPT_WARN_ERR + content + "\n")
+
+    @staticmethod
+    def print_example():
+        print("\nexample:")
+        print("  buffy -src /data_dir -dst /backup_dir -dst s3://backup_bucket")
 
     @staticmethod
     def get_source_digest(root, sources):

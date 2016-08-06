@@ -39,8 +39,6 @@ class Source(object):
 
         self.root = data[ROOT_KEY] if not simple_spec and ROOT_KEY in data else root
         assert type(self.root) is str
-        if "" is not self.root and not self.is_exclude:
-            debug("root: %s" % self.root)
 
         # file: specify files by give accurate filename/dirname
         file_or_dir = data if simple_spec else data[FILE_KEY] if FILE_KEY in data else None
@@ -63,6 +61,18 @@ class Source(object):
         self.dynamic = dynamic if not dynamic or type(dynamic[0]) is list else [dynamic]
 
         assert self.file_or_dir or self.ext or self.re or self.dynamic
+
+        if "" == self.root and self.file_or_dir and len(self.file_or_dir) == 1:
+            dirname, basename = os.path.split(self.file_or_dir[0])
+            self.root = dirname
+            if len(basename):
+                self.file_or_dir = [basename]
+            else:
+                self.file_or_dir = None
+                self.re = [".*"]
+
+        if "" is not self.root and not self.is_exclude:
+            debug("root: %s" % self.root)
 
         self.show_sources()
         if len(self.root) > 0 and self.root[-1] != DIR_DELIM:
@@ -199,40 +209,42 @@ DEFAULT_ENCODING = False
 
 class Config(object):
 
-    def __init__(self, config_file):
-        if not config_file or not os.path.exists(config_file):
-            error("[BUFFY] config file \"%s\" does not exist, program exit..." % config_file)
-            sys.exit()
-        info("[BUFFY] reading config file \"%s\"..." % config_file)
-        with open(config_file) as config_fp:
-            import json
-            data = json.load(config_fp)
+    def __init__(self, config_file=None, src=None, dst=None, name=None, compress=None, encoding=None, rpt=None):
+        data = None
+        if config_file:
+            if not os.path.exists(config_file):
+                error("[BUFFY] config file \"%s\" does not exist, program exit..." % config_file)
+                sys.exit()
+            info("[BUFFY] reading config file \"%s\"..." % config_file)
+            with open(config_file) as config_fp:
+                import json
+                data = json.load(config_fp)
 
-        if DST_KEY not in data:
+        if not dst and DST_KEY not in data:
             error("[config] no \'dst\' specified, program exit...")
             sys.exit()
-        dst = data[DST_KEY]
+        dst = data[DST_KEY] if not dst else dst
         if not type(dst) in [str, list]:
             error("[config] entry 'src' shall contain 'str' or 'list' value instead of %s, program exit..."
                   % type(dst))
             sys.exit()
 
-        if SRC_KEY not in data:
+        if not src and SRC_KEY not in data:
             error("[config] no \'src\' specified, program exit...")
             sys.exit()
 
         self.dst = [dst] if type(dst) is str else dst
-        self.name = data[NAME_KEY] if NAME_KEY in data else ""
+        self.name = name if name else data[NAME_KEY] if data and NAME_KEY in data else ""
         assert type(self.name) is str
-        self.compress = get_bool_value(data, COMPRESS_KEY, DEFAULT_COMPRESS)
-        self.encoding = get_bool_value(data, ENCODING_KEY, DEFAULT_ENCODING)
+        self.compress = compress if None is not compress else get_bool_value(data, COMPRESS_KEY, DEFAULT_COMPRESS)
+        self.encoding = encoding if None is not encoding else get_bool_value(data, ENCODING_KEY, DEFAULT_ENCODING)
 
         debug("------------------------")
         if "" != self.name:
             debug("name: %s" % self.name)
         show_list(self.dst, "dst")
-        self.src = Source(data[SRC_KEY])
+        self.src = Source(src if src else data[SRC_KEY])
         debug("compress: %s" % ("yes" if self.compress else "no"))
         debug("encoding: %s" % ("yes" if self.encoding else "no"))
-        self.rpt = Report(data[RPT_KEY] if RPT_KEY in data else None)
+        self.rpt = Report(rpt if rpt else data[RPT_KEY] if data and RPT_KEY in data else None)
         debug("------------------------")
