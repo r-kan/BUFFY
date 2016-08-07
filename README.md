@@ -51,7 +51,9 @@ We haven't talked about the usage of 'dynamic pattern', right? It is the most po
 ```
     "src":
     {
+        ...
         "dyn": ["file_$dyn$", "datetime", "str(datetime.date.today())"],
+        ...
     },
 ```
 
