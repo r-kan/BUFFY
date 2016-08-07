@@ -152,7 +152,8 @@ class Source(object):
                 if dynamic_alias not in re_str:
                     warning("[config] '%s' does not appear in '%s', dynamic filename mechanism will not apply"
                             % (dynamic_alias, re_str))
-                exec("import %s" % import_str)
+                if "" != import_str:
+                    exec("import %s" % import_str)
                 dyn_str = eval(eval_str)
                 patterns.append(re_str.replace(dynamic_alias, dyn_str))
             sources += Source.get_re_files(self.root, patterns)
