@@ -52,12 +52,12 @@ We haven't talked about the usage of 'dynamic pattern', right? It is the most po
     "src":
     {
         ...
-        "dyn": ["file_$dyn$", "datetime", "str(datetime.date.today())"],
+        "dyn": ["masterpiece_$dyn$", "datetime", "str(datetime.date.today())"],
         ...
     },
 ```
 
-The 1st entry is original regular expression, such that **$dyn$** is a keyword, which will be replaced by the runtime evaluation of the 3rd entry. Before that, the 2nd entry will be 'imported' (leave it empty if 'import' is not needed). For instance, file named 'file_2013-06-14' will be backed up, on the date the highly praised work 'The Last of Us' on PS3 is released, which is 2013/06/14.
+The 1st entry is original regular expression, such that **$dyn$** is a keyword, which will be replaced by the runtime evaluation of the 3rd entry. Before that, the 2nd entry will be 'imported' (leave it empty if 'import' is not needed). For instance, file named 'masterpiece_2013-06-14' will be backed up, on the date the highly praised work 'The Last of Us' on PS3 is released, which is 2013/06/14.
 
 # Future direction of BUFFY
 Support more remote backup media  
