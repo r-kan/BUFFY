@@ -60,22 +60,23 @@ class MediaBase(object):
         dst_base = self._dst_root + backup_name
         non_disk_dst_base = (self.report_path if self.report_path else TMP_DIR) + backup_name
         tar_input_file = non_disk_dst_base + ".list"
-        src_list_content = ""
-        for src in sources:
-            src_list_content += (src.replace(self.root, "") + "\n")
-        disk_write(tar_input_file, src_list_content, self.dry)
         targz_file = "%s.tar.gz" % (dst_base if is_disk else non_disk_dst_base)
-        compress_cmd = "tar zcvf %(dst)s -T %(src_list_file)s" \
-                       % {'dst': targz_file, 'src_list_file': tar_input_file}
-        os.chdir(self.root)
         if not self.dry:
-            os.system("bash -c \"" + compress_cmd + " >& /dev/null\"")
-            if not self.detail_report:
-                os.remove(tar_input_file)
+            os.chdir(self.root)
+            import tarfile
+            with tarfile.open("%s" % targz_file, "w|gz") as tar:
+                for src in sources:
+                    tar.add(src.replace(self.root, ""))
+            if self.detail_report:
+                src_list_content = ""
+                for src in sources:
+                    src_list_content += (src.replace(self.root, "") + "\n")
+                disk_write(tar_input_file, src_list_content, self.dry)
         if not is_disk:
             self.copyfile(targz_file, "%s.tar.gz" % dst_base)
             if not self.dry:
                 os.remove(targz_file)
+        compress_cmd = "tar zcvf %(dst)s -T %(src_list)s" % {'dst': targz_file, 'src_list': tar_input_file}
         reproduce_str = "cd %s\n%s\n" % (self.root, compress_cmd) + \
                         ("" if is_disk else "%s%s %s\n" % (self.cp_cmd, targz_file, "%s.tar.gz" % dst_base))
         size, timestamp = self.get_file_info_not_dry("%s.tar.gz" % dst_base)

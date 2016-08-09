@@ -68,12 +68,13 @@ class S3(MediaBase):
         wo_head_path = self._dst_root[len(S3_HEAD):]
         end_bucket = wo_head_path.find(S3_DELIM)
         bucket = wo_head_path if -1 == end_bucket else wo_head_path[:end_bucket]
-        check_bucket_cmd = "%(aws)s s3 ls %(bucket)s" % {'aws': self.aws, 'bucket': bucket}
         info("[s3] checking bucket '%s' existence..." % bucket)
-        res = os.system("bash -c \"" + check_bucket_cmd + " >& /dev/null\"")
-        self.okay = 0 == res
+        cmd_list = [self.aws, "s3", "ls", bucket]
+        stdout_data, _ = Popen(cmd_list, stdout=PIPE, stderr=STDOUT).communicate()
+        res = pp_popen_out(stdout_data)
+        self.okay = "\\n" != res[0:2]  # we assume 'aws ls' always gives a '\n' for its stdout when error occurs
         if not self.okay:
-            warning("[s3] fail to locate bucket '%s' (err: %s)" % (bucket, res))
+            warning("[s3] fail to locate bucket '%s'" % bucket)
 
     def create_path(self):
         pass
