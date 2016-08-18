@@ -1,22 +1,24 @@
 # BUFFY? What is it?
-BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files  
+BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files.  
 
 # How BUFFY makes your life better
 * Back up to local and remote spaces at one time  
 * Very simple and straightforward to use, yet flexible  
 * Easy monitoring backup status  
+* Support all major platforms, e.g., Windows, linux, MacOS
 
 # How to use BUFFY?
 First, let’s back up a single file **my_file.txt** to local disk **/my_backup/**  
 ```
     buffy -src my_file.txt -dst /my_backup/  
 ```
-Note: here, `buffy` stands for `python3 <BUFFY_HOME>/main.py`  
+Note: here, `buffy` stands for `python3 <_BUFFY_HOME_>/main.py`  
 
 It is suggested to back up both locally and remotely, e.g., local disk and <a href='http://aws.amazon.com/s3'>Amazon S3</a>  
 ```
     buffy -src my_file_dir -dst /my_backup/ -dst s3://my_backup_bucket  
 ```
+Note: to back up to s3, <a href='https://aws.amazon.com/cli'>awscli</a> must be installed  
 
 It could be bad due to various aspects of expense, if we back up beyond requirement.  
 BUFFY provides a set of simple yet flexible functions to specify the backup target.  
@@ -60,7 +62,7 @@ We haven't talked about the usage of 'dynamic pattern', right? It is the most po
 
 The 1st entry is original regular expression, such that **$dyn$** is a keyword, which will be replaced by the runtime evaluation of the 3rd entry. Before that, the 2nd entry will be 'imported' (leave it empty if 'import' is not needed). For instance, file named 'masterpiece_2013-06-14' will be backed up, on the date the highly praised work 'The Last of Us' on PS3 is released, which is 2013/06/14.  
 
-Also try `buffy -h` to find out other functionality!
+Besides, also try `buffy -h` to find out other functionality!
 
 # Future direction of BUFFY
 Support more remote backup media  
