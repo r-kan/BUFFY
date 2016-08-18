@@ -5,14 +5,14 @@ BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files.
 * Back up to local and remote spaces at one time  
 * Very simple and straightforward to use, yet flexible  
 * Easy monitoring backup status  
-* Support all major platforms, e.g., Windows, linux, MacOS
+* Support all major platforms with python3.x, e.g., Windows, linux, Mac OS
 
 # How to use BUFFY?
 First, let’s back up a single file **my_file.txt** to local disk **/my_backup/**  
 ```
     buffy -src my_file.txt -dst /my_backup/  
 ```
-Note: here, `buffy` stands for `python3 <BUFFY_HOME>/main.py`  
+Note: from now, `buffy` stands for `python3 <BUFFY_HOME>/main.py`  
 
 It is suggested to back up both locally and remotely, e.g., local disk and <a href='http://aws.amazon.com/s3'>Amazon S3</a>  
 ```
