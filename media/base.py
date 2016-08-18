@@ -7,7 +7,12 @@ from logging import info
 from util.global_def import DIR_DELIM
 
 
-TMP_DIR = "%(delim)stmp%(delim)sBUFFY%(delim)s" % {'delim': DIR_DELIM}  # TODO: support Windows
+def get_temp_dir():
+    import tempfile
+    return tempfile.gettempdir()
+
+TMP_DIR = "%(tmp_dir)s%(delim)s" % {'tmp_dir': get_temp_dir(), 'delim': DIR_DELIM}
+
 DEFAULT_NAME = "BUFFY"
 
 
@@ -57,6 +62,8 @@ class MediaBase(object):
         is_disk = "disk" == self.media_name
         backup_name = self.encoding_str if not self.name else \
             self.name + ("_" + self.encoding_str if len(self.encoding_str) > 0 else "")
+        if "" == backup_name:
+            backup_name = DEFAULT_NAME
         dst_base = self._dst_root + backup_name
         non_disk_dst_base = (self.report_path if self.report_path else TMP_DIR) + backup_name
         tar_input_file = non_disk_dst_base + ".list"
@@ -80,7 +87,7 @@ class MediaBase(object):
         reproduce_str = "cd %s\n%s\n" % (self.root, compress_cmd) + \
                         ("" if is_disk else "%s%s %s\n" % (self.cp_cmd, targz_file, "%s.tar.gz" % dst_base))
         size, timestamp = self.get_file_info_not_dry("%s.tar.gz" % dst_base)
-        reproduce_file = (DEFAULT_NAME if "" == backup_name else backup_name) + "_" + self.media_name + ".cmd"
+        reproduce_file = backup_name + "_" + self.media_name + ".cmd"
         return "%s.tar.gz, size: %i, timestamp: %s" % (backup_name, size, timestamp), \
                reproduce_file, reproduce_str
 

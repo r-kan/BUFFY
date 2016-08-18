@@ -5,7 +5,7 @@ import os
 from logging import info
 from subprocess import Popen, PIPE, STDOUT
 from media.base import MediaBase
-from util.global_def import warning, error
+from util.global_def import warning, error, is_windows, DIR_DELIM
 
 """
   following information is from 'aws s3 help'
@@ -39,17 +39,18 @@ def locate_abs_exec(program):  # 'program' can be an absolute path name, or just
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-    # try 'type' (note: mac os may need this)
-    type_cmd = Popen(["type", program], stdout=PIPE, stderr=STDOUT)
-    stdout_data, _ = type_cmd.communicate()
-    out = pp_popen_out(stdout_data).replace("%s is " % program, '')
-    if is_exe(out):
-        return out
+    if not is_windows():
+        # try 'type' (note: mac os may need this)
+        type_cmd = Popen(["type", program], stdout=PIPE, stderr=STDOUT)
+        stdout_data, _ = type_cmd.communicate()
+        out = pp_popen_out(stdout_data).replace("%s is " % program, '')
+        if is_exe(out):
+            return out
     return None
 
 
 def get_aws_path():
-    return locate_abs_exec("aws")
+    return locate_abs_exec("aws.exe" if is_windows() else "aws")
 
 
 class S3(MediaBase):
@@ -72,7 +73,8 @@ class S3(MediaBase):
         cmd_list = [self.aws, "s3", "ls", bucket]
         stdout_data, _ = Popen(cmd_list, stdout=PIPE, stderr=STDOUT).communicate()
         res = pp_popen_out(stdout_data)
-        self.okay = "\\n" != res[0:2]  # we assume 'aws ls' always gives a '\n' for its stdout when error occurs
+        # we assume 'aws ls' always gives a newline (platform dependent) for its stdout when error occurs
+        self.okay = 0 != res.find('\r\n' if is_windows() else "\\n")
         if not self.okay:
             warning("[s3] fail to locate bucket '%s'" % bucket)
 
@@ -84,17 +86,26 @@ class S3(MediaBase):
             return -1, "NA"
         cmd_list = [self.aws, "s3", "ls", filename]
         stdout_data, _ = Popen(cmd_list, stdout=PIPE, stderr=STDOUT).communicate()
-        ls_out_list = pp_popen_out(stdout_data).split()
-        if not 4 == len(ls_out_list):
-            warning("[s3] ls %s gives unexpected result" % filename)
-            return -1, "NA"
-        [day, time, size, _] = ls_out_list
-        return int(size), day + " " + time
+        output_lines = [line.strip() for line in stdout_data.splitlines()]
+        for line in output_lines:
+            ls_out_list = pp_popen_out(line).split()
+            if not 4 == len(ls_out_list):
+                warning("[s3] ls %s gives unexpected result" % filename)
+                warning(line)
+                continue
+            [day, time, size, _] = ls_out_list
+            return int(size), day + " " + time
+        return -1, "NA"
 
     def copyfile(self, src, dst):
+        if DIR_DELIM != S3_DELIM:
+            dst = dst.replace(DIR_DELIM, S3_DELIM)
         cmd_list = [self.aws, "s3", "cp", src, dst]
         if not self.dry:
             stdout_data, _ = Popen(cmd_list, stdout=PIPE, stderr=STDOUT).communicate()
+        # Note:
+        #   fetch size upon copy file is majorly for uncompress backup
+        #   for compress backup, it is wasted action but shall be affordable (for there's only one file copy)
         size, _ = self.get_file_info_not_dry(dst)  # do not use the value 'timestamp'
         valid = -1 != size
         return valid, size if valid else 0
