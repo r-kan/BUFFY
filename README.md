@@ -11,6 +11,7 @@ First, let’s back up a single file **my_file.txt** to local disk **/my_backup/
 ```
     buffy -src my_file.txt -dst /my_backup/  
 ```
+_Note: here, 'buffy' stands for 'python3 \<BUFFY_HOME\>/main.py'_  
 
 It is suggested to back up both locally and remotely, e.g., local disk and <a href='http://aws.amazon.com/s3'>Amazon S3</a>  
 ```
