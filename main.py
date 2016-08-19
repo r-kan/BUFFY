@@ -64,7 +64,8 @@ class BUFFY(object):
                 media.create_path()
             backup_report = media.back_up(sources)
             rpt_content += "destination: %s\n\t%s\n" % (dst, backup_report)
-        self.report(BUFFY.get_source_digest(self.config.src.root, sources) + rpt_content[0: len(rpt_content) - 1])
+        if not self.args.dry:
+            self.report(BUFFY.get_source_digest(self.config.src.root, sources) + rpt_content[0: len(rpt_content) - 1])
 
     def report(self, content):
         info(content)

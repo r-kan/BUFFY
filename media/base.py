@@ -117,7 +117,7 @@ class MediaBase(object):
         backup_report, reproduce_file, reproduce_str = backup_ftor(sources)
         reproduce_str_max_length = 1024 * 1024  # 1MB
         if len(reproduce_str) > reproduce_str_max_length:
-            message = "skip dump subsequent report for the total size (%s) is too large" % len(reproduce_str)
+            message = "skip dump subsequent content for the total size (%s) is too large" % len(reproduce_str)
             info("[info] %s" % message)
             reproduce_str = reproduce_str[:reproduce_str_max_length] + "\n...\n" + message
         self.report(reproduce_file, reproduce_str)
