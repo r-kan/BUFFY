@@ -60,7 +60,7 @@ We haven't talked about the usage of 'dynamic pattern', right? It is the most po
     },
 ```
 
-The 1st entry is original regular expression, such that **$dyn$** is a keyword, which will be replaced by the runtime evaluation of the 3rd entry. Before that, the 2nd entry will be 'imported' (leave it empty if 'import' is not needed). For instance, file named 'masterpiece_2013-06-14' will be backed up, on the date the highly praised work 'The Last of Us' on PS3 is released, which is 2013/06/14.  
+Take a look at the value of 'dyn': the 1st entry is original regular expression, such that **$dyn$** is a keyword, which will be replaced by the runtime evaluation outcome of the 3rd entry. Before that, the 2nd entry will be 'imported' (leave it empty if 'import' is not needed). For instance, file named 'masterpiece_2013-06-14' will be backed up, on the date the highly praised work 'The Last of Us' on PS3 is released, which is 2013/06/14.  
 
 Besides, also try `buffy -h` to find out other functionality!
 
