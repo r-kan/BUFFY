@@ -159,7 +159,8 @@ class Source(object):
             sources += Source.get_re_files(self.root, patterns)
 
         exclude_sources = self.exclude.get_sources() if self.exclude else []
-        return sorted([src for src in list(set(sources)) if src not in exclude_sources])  # 'set' to remove duplication
+        # 'set' to remove duplication
+        return sorted([src for src in list(set(sources)) if src not in exclude_sources] and not os.path.islink(src))
 
 
 def get_bool_value(data, key, default_value):
