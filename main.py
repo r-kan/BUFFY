@@ -57,6 +57,10 @@ class BUFFY(object):
         if not sources:
             info("[BUFFY] no sources to back up")
             return
+        if self.args.verbose:
+            print("[BUFFY] backup target:")
+            for source in sources:
+                print(source)
         rpt_content = ""
         for dst in self.config.dst:
             media = create_media(dst, self.config, self.args)
