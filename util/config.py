@@ -160,7 +160,7 @@ class Source(object):
 
         exclude_sources = self.exclude.get_sources() if self.exclude else []
         # 'set' to remove duplication
-        return sorted([src for src in list(set(sources)) if src not in exclude_sources] and not os.path.islink(src))
+        return sorted([src for src in list(set(sources)) if src not in exclude_sources and not os.path.islink(src)])
 
 
 def get_bool_value(data, key, default_value):
