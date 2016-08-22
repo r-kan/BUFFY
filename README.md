@@ -68,4 +68,4 @@ Besides, also try `buffy -h` to find out other functionality!
 Support more remote backup media  
 
 # Contact  
-Please contact <a href='http://r-kan.github.io'>*rkan*</a> by its_right@msn.com for any question/request/bug without hesitation. 
+Please contact <a href='http://r-kan.github.io'>*Rodney Kan*</a> by its_right@msn.com for any question/request/bug without hesitation. 
