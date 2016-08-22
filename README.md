@@ -1,5 +1,5 @@
 # BUFFY? What is it?
-BUFFY, stands for 'Back Up Files For You', is a pin tool to back up files.  
+BUFFY, stands for 'Back Up Files For You', is a command line tool to back up files.  
 
 # How BUFFY makes your life better
 * Back up to local and remote spaces at one time  
