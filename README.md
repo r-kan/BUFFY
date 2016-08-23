@@ -65,7 +65,8 @@ Take a look at the value of 'dyn': the 1st entry is original regular expression,
 Besides, also try `buffy -h` to find out other functionality!
 
 # Future direction of BUFFY
-Support more remote backup media  
+Support more remote backup media, e.g., dropbox  
+Provide incrmental backup optionally  
 
 # Contact  
 Please contact <a href='http://r-kan.github.io'>*Rodney Kan*</a> by its_right@msn.com for any question/request/bug without hesitation. 
