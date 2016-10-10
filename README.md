@@ -62,7 +62,27 @@ We haven't talked about the usage of 'dynamic pattern', right? It is the most po
 
 Take a look at the value of 'dyn': the 1st entry is original regular expression, such that **$dyn$** is a keyword, which will be replaced by the runtime evaluation outcome of the 3rd entry. Before that, the 2nd entry will be 'imported' (leave it empty if 'import' is not needed). For instance, file named 'masterpiece_2013-06-14' will be backed up, on the date the highly praised work 'The Last of Us' on PS3 is released, which is 2013/06/14.  
 
-Besides, also try `buffy -h` to find out other functionality!
+# Command line usage
+```
+usage: main.py [-h] [-src SRC] [-dst DST] [-n NAME] [-e] [-cmp] [-r RPT] [-v]
+               [-s] [-d] [-c CONFIG_FILE]
+
+BUFFY --- Back Up Files For You
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -src SRC              backup source
+  -dst DST              backup destination
+  -n NAME, --name NAME  backup name
+  -e, --encoding        name encoding with date (default: False)
+  -cmp, --compress      compress backup files (default: False)
+  -r RPT, --report RPT  report path
+  -v, --verbose         verbose mode
+  -s, --silent          silent mode
+  -d, --dry_run         perform a dry run
+  -c CONFIG_FILE, --config CONFIG_FILE
+                        config file (this option overwrites others)
+```
 
 # Future direction of BUFFY
 Support more remote backup media, e.g., dropbox  
