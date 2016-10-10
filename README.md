@@ -64,7 +64,7 @@ Take a look at the value of 'dyn': the 1st entry is original regular expression,
 
 # Command line usage
 ```
-usage: main.py [-h] [-src SRC] [-dst DST] [-n NAME] [-e] [-cmp] [-r RPT] [-v]
+usage: buffy [-h] [-src SRC] [-dst DST] [-n NAME] [-e] [-cmp] [-r RPT] [-v]
                [-s] [-d] [-c CONFIG_FILE]
 
 BUFFY --- Back Up Files For You
